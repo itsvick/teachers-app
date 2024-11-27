@@ -25,7 +25,8 @@ const taxonomyStore = create(
     }),
     {
       name: 'taxonomyTeacher',
-      getStorage: () => localStorage,
+      getStorage: () => localStorage
+      // storage: typeof window !== 'undefined' ? localStorage : undefined,
     }
   )
 );

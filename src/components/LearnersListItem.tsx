@@ -101,6 +101,7 @@ const LearnersListItem: React.FC<LearnerListProps> = ({
   const setCohortLearnerDeleteId = manageUserStore(
     (state) => state.setCohortLearnerDeleteId
   );
+  const isActiveYear = userStore.isActiveYearSelected;
 
   useEffect(() => {
     if (reloadState) {
@@ -625,7 +626,7 @@ const LearnersListItem: React.FC<LearnerListProps> = ({
                   )}
                 </Box>
               </Box>
-              <MoreVertIcon
+              {isActiveYear && <MoreVertIcon
                 onClick={(event) => {
                   isMobile
                     ? toggleDrawer('bottom', true)(event)
@@ -636,7 +637,7 @@ const LearnersListItem: React.FC<LearnerListProps> = ({
                   color: theme.palette.warning['300'],
                   cursor: 'pointer',
                 }}
-              />
+              />}
             </Box>
           </Box>
         </Box>
@@ -652,15 +653,16 @@ const LearnersListItem: React.FC<LearnerListProps> = ({
         optionList={
           block
             ? [
-                {
-                  label: t('COMMON.REASSIGN_BLOCKS_REQUEST'),
-                  icon: (
-                    <LocationOnOutlinedIcon
-                      sx={{ color: theme.palette.warning['300'] }}
-                    />
-                  ),
-                  name: 'reassign-block-request',
-                },
+                // TODO: Integrate todo service
+                // {
+                //   label: t('COMMON.REASSIGN_BLOCKS_REQUEST'),
+                //   icon: (
+                //     <LocationOnOutlinedIcon
+                //       sx={{ color: theme.palette.warning['300'] }}
+                //     />
+                //   ),
+                //   name: 'reassign-block-request',
+                // },
                 {
                   label: t('COMMON.REASSIGN_CENTERS'),
                   icon: (
@@ -723,7 +725,7 @@ const LearnersListItem: React.FC<LearnerListProps> = ({
                   name: isDropout ? 'unmark-drop-out' : 'mark-drop-out',
                 },
                 {
-                  label: t('COMMON.DELETE_USER'),
+                  label: t('COMMON.DELETE_USER_FROM_CENTER'),
                   icon: (
                     <DeleteOutlineIcon
                       sx={{ color: theme.palette.warning['300'] }}

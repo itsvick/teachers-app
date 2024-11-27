@@ -73,6 +73,7 @@ export enum cohortPrivileges {
 export enum FormContext {
   USERS = 'USERS',
   COHORTS = 'COHORTS',
+  COHORT_MEMBER = 'COHORTMEMBER'
 }
 
 export enum FormContextType {
@@ -80,6 +81,19 @@ export enum FormContextType {
   TEACHER = 'TEACHER',
   TEAM_LEADER = 'TEAM LEADER',
   COHORT = 'COHORT',
+  COHORT_MEMBER = 'COHORTMEMBER'
+}
+export enum ObservationEntityType {
+  LEARNER = 'learner',
+  FACILITATOR = 'facilitator',
+  CENTER = 'center',
+}
+export enum ObservationStatus {
+  DRAFT = 'draft',
+  COMPLETED = 'completed',
+  NOT_STARTED = 'notstarted',
+  STARTED="started",
+  ALL="All"
 }
 
 export enum CenterType {
@@ -99,13 +113,23 @@ export enum Pagination {
   ITEMS_PER_PAGE = 10,
   MAX_ITEMS = 50,
 }
+export enum LeftDays {
+  ONE_DAY_IN_MILLISECONDS=1000 * 60 * 60 * 24
+}
 
 export enum Telemetry {
   CLICK = 'CLICK',
   SEARCH = 'SEARCH',
   VIEW = 'VIEW',
-}
 
+}
+export enum TelemetryEventType {
+  CLICK = 'CLICK',
+  SEARCH = 'SEARCH',
+  VIEW = 'VIEW',
+  RADIO="RADIO"
+
+}
 export enum AssessmentStatus {
   NOT_STARTED = 'Not_Started',
   IN_PROGRESS = 'In_Progress',

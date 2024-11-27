@@ -1,18 +1,19 @@
+import CohortSelectionSection from '@/components/CohortSelectionSection';
 import Header from '@/components/Header';
 import { getCohortSearch } from '@/services/CohortServices';
 import coursePlannerStore from '@/store/coursePlannerStore';
 import useStore from '@/store/store';
 import taxonomyStore from '@/store/taxonomyStore';
-import { CoursePlannerConstants } from '@/utils/app.constant';
+import { CoursePlannerConstants, Telemetry } from '@/utils/app.constant';
 import {
   filterAndMapAssociationsNew,
   findCommonAssociations,
   getAssociationsByCodeNew,
   getOptionsByCategory,
-  toPascalCase,
 } from '@/utils/Helper';
 import withAccessControl from '@/utils/hoc/withAccessControl';
 import { CoursePlannerData, ICohort } from '@/utils/Interfaces';
+import { telemetryFactory } from '@/utils/telemetry';
 import KeyboardArrowRightIcon from '@mui/icons-material/KeyboardArrowRight';
 import {
   Box,
@@ -21,6 +22,7 @@ import {
   InputLabel,
   MenuItem,
   Select,
+  SelectChangeEvent,
   Typography,
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
@@ -28,9 +30,8 @@ import { useTranslation } from 'next-i18next';
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 import { useRouter } from 'next/router';
 import React, { useEffect, useState } from 'react';
-import { accessControl, frameworkId } from '../../app.config';
-import CohortSelectionSection from '@/components/CohortSelectionSection';
-import { useDirection } from '../hooks/useDirection';
+import { accessControl, frameworkId } from '../../../app.config';
+import { useDirection } from '../../hooks/useDirection';
 
 const CoursePlanner = () => {
   const [value, setValue] = React.useState('');
@@ -69,13 +70,35 @@ const CoursePlanner = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [loading, setLoading] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [stateName, setStateName] = useState(true);
   const [cohortsData, setCohortsData] = useState<Array<ICohort>>([]);
   const [manipulatedCohortData, setManipulatedCohortData] =
     useState<Array<ICohort>>(cohortsData);
 
-  const handleChange = (event: any) => {
-    setValue(event.target.value);
-    setType(event.target.value);
+  const handleChange = (event: SelectChangeEvent<string>) => {
+    const newValue = event.target.value as string;
+    if (newValue !== value) {
+      setValue(newValue);
+      setType(newValue);
+    }
+    const windowUrl = window.location.pathname;
+    const cleanedUrl = windowUrl.replace(/^\//, '');
+    const env = cleanedUrl.split('/')[0];
+
+    const telemetryInteract = {
+      context: {
+        env: env,
+        cdata: [],
+      },
+      edata: {
+        id: 'change-filter:' + event.target.value,
+
+        type: Telemetry.CLICK,
+        subtype: '',
+        pageid: cleanedUrl,
+      },
+    };
+    telemetryFactory.interact(telemetryInteract);
   };
 
   const addQueryParams = (newParams: any) => {
@@ -91,11 +114,6 @@ const CoursePlanner = () => {
       undefined,
       { shallow: true }
     );
-  };
-
-  const handleCohortChange = (event: any) => {
-    setSelectedValue(event.target.value);
-    addQueryParams({ center: event.target.value });
   };
 
   useEffect(() => {
@@ -192,13 +210,15 @@ const CoursePlanner = () => {
       }
     };
 
-    fetchCohortSearchResults();
+    if (selectedValue.length) {
+      fetchCohortSearchResults();
+    }
   }, [selectedValue]);
 
   useEffect(() => {
     const fetchTaxonomyResults = async () => {
       try {
-        const url = `${process.env.NEXT_PUBLIC_SUNBIRDSAAS_API_URL}/api/framework/v1/read/${frameworkId}`;
+        const url = `/api/framework/v1/read/${frameworkId}`;
         const boardData = await fetch(url).then((res) => res.json());
         console.log(boardData?.result?.framework);
         const frameworks = boardData?.result?.framework;
@@ -480,14 +500,15 @@ const CoursePlanner = () => {
             );
             setSubjects(overallCommonSubjects);
           }
+        } else {
+          setStateName(false);
         }
       } catch (error) {
         console.error('Failed to fetch cohort search results:', error);
       }
     };
-
     fetchTaxonomyResults();
-  }, [value, selectedValue]);
+  }, [value, subjects]);
 
   const isStateEmpty = !tStore.state;
   const isBoardEmpty = !tStore.board;
@@ -501,6 +522,15 @@ const CoursePlanner = () => {
   if (isGradeEmpty) emptyFields.push(CoursePlannerConstants.GRADE_SMALL);
 
   const anyFieldsEmpty = emptyFields.length > 0;
+
+  const redirectTODetailsPage = (item: any) => {
+    if (tStore.type) {
+      setTaxonomySubject(item.name);
+      router.push({
+        pathname: `/course-planner/center/${selectedValue}`,
+      });
+    }
+  };
 
   return (
     <Box minHeight="100vh">
@@ -520,51 +550,6 @@ const CoursePlanner = () => {
           {t('COURSE_PLANNER.COURSE_PLANNER')}
         </Typography>
       </Box>
-
-      {/* <Grid sx={{ display: 'flex', alignItems: 'center' }} container>
-        <Grid item md={6} xs={12}>
-          <Box sx={{ mt: 2, px: '20px' }}>
-            <Box sx={{ flexBasis: '70%' }}>
-              <FormControl
-                className="drawer-select"
-                sx={{ width: '100%' }}
-                variant="outlined"
-              >
-                <InputLabel id="select-center-label">Select Centers</InputLabel>
-                <Select
-                  labelId="select-center-label"
-                  id="select-center"
-                  value={selectedValue}
-                  onChange={handleCohortChange}
-                  label="Select Centers"
-                  style={{
-                    borderRadius: '0.5rem',
-                    color: theme.palette.warning['200'],
-                    width: '100%',
-                    marginBottom: '0rem',
-                  }}
-                  MenuProps={{
-                    style: {
-                      maxHeight: 400,
-                    },
-                  }}
-                >
-                  
-                  {store.cohorts.map((cohort: any) => (
-                    <MenuItem
-                      key={cohort.cohortId}
-                      value={cohort.cohortId}
-                      className="text-truncate"
-                    >
-                      {toPascalCase(cohort?.name)}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            </Box>
-          </Box>
-        </Grid>
-      </Grid> */}
 
       <Grid container>
         <Grid item xs={12} md={6}>
@@ -608,7 +593,8 @@ const CoursePlanner = () => {
                   !tStore.state ||
                   !tStore.board ||
                   !tStore.medium ||
-                  !tStore.grade
+                  !tStore.grade ||
+                  stateName == false
                 } // Disable if any field is empty
               >
                 <MenuItem value={'Foundation Course'}>
@@ -637,7 +623,7 @@ const CoursePlanner = () => {
               {anyFieldsEmpty ? (
                 <Box sx={{ ml: 2, p: 2 }}>
                   <Typography variant="h2">
-                    {`No assigned ${emptyFields.join(', ')}`}
+                    {`No assigned ${emptyFields.join(', ')} for selected Center`}
                   </Typography>
                 </Box>
               ) : subjects?.length > 0 ? (
@@ -652,12 +638,7 @@ const CoursePlanner = () => {
                         margin: '14px',
                         background: theme.palette.warning['A400'],
                       }}
-                      onClick={() => {
-                        setTaxonomySubject(item.name);
-                        router.push({
-                          pathname: '/course-planner-detail',
-                        });
-                      }}
+                      onClick={() => redirectTODetailsPage(item)}
                     >
                       <Box
                         sx={{
@@ -679,44 +660,7 @@ const CoursePlanner = () => {
                                 position: 'relative',
                                 display: 'inline-flex',
                               }}
-                            >
-                              {/* <Box sx={{ width: '40px', height: '40px' }}>
-                                <CircularProgressbar
-                                  value={item.circular || 0}
-                                  strokeWidth={10}
-                                  styles={buildStyles({
-                                    pathColor: '#06A816',
-                                    trailColor: '#E6E6E6',
-                                    strokeLinecap: 'round',
-                                  })}
-                                />
-                              </Box>
-
-                              <Box
-                                sx={{
-                                  top: 0,
-                                  left: 0,
-                                  bottom: 0,
-                                  right: 0,
-                                  position: 'absolute',
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  justifyContent: 'center',
-                                }}
-                              >
-                                <Typography
-                                  variant="caption"
-                                  component="div"
-                                  sx={{
-                                    fontSize: '11px',
-                                    color: theme.palette.warning['300'],
-                                    fontWeight: '500',
-                                  }}
-                                >
-                                  {item.circular || 0}%
-                                </Typography>
-                              </Box> */}
-                            </Box>
+                            ></Box>
 
                             <Box
                               sx={{

@@ -1,23 +1,23 @@
 'use client';
 
-import { Box, Stack } from '@mui/material';
-import React, { useEffect, useState } from 'react';
-import { usePathname, useRouter } from 'next/navigation';
-import ConfirmationModal from './ConfirmationModal';
-import Image from 'next/image';
-import LogoutOutlinedIcon from '@mui/icons-material/LogoutOutlined';
-import MenuItem from '@mui/material/MenuItem';
-import PersonOutlineOutlinedIcon from '@mui/icons-material/PersonOutlineOutlined';
-import accountIcon from './../assets/images/account.svg';
-import dynamic from 'next/dynamic';
 import { logEvent } from '@/utils/googleAnalytics';
-import logoLight from '../../public/images/logo-light.png';
-import menuIcon from '../assets/images/menuIcon.svg';
+import AccountCircleOutlinedIcon from '@mui/icons-material/AccountCircleOutlined';
+import LogoutOutlinedIcon from '@mui/icons-material/LogoutOutlined';
+import PersonOutlineOutlinedIcon from '@mui/icons-material/PersonOutlineOutlined';
+import { Box, Stack } from '@mui/material';
+import MenuItem from '@mui/material/MenuItem';
 import { useTheme } from '@mui/material/styles';
 import { useTranslation } from 'next-i18next';
-import StyledMenu from './StyledMenu';
-import AccountCircleOutlinedIcon from '@mui/icons-material/AccountCircleOutlined';
+import dynamic from 'next/dynamic';
+import Image from 'next/image';
+import { usePathname, useRouter } from 'next/navigation';
+import React, { useEffect, useState } from 'react';
+import logoLight from '../../public/images/logo-light.png';
+import menuIcon from '../assets/images/menuIcon.svg';
 import { useDirection } from '../hooks/useDirection';
+import useStore from '../store/store';
+import ConfirmationModal from './ConfirmationModal';
+import StyledMenu from './StyledMenu';
 
 interface HeaderProps {
   toggleDrawer?: (newOpen: boolean) => () => void;
@@ -34,6 +34,8 @@ const Header: React.FC<HeaderProps> = ({ toggleDrawer, openDrawer }) => {
   const { t } = useTranslation();
   const pathname = usePathname();
   const theme = useTheme<any>();
+  const store = useStore();
+  const isActiveYear = store.isActiveYearSelected;
 
   const [userId, setUserId] = useState<string>('');
   const [openMenu, setOpenMenu] = useState<boolean>(false);
@@ -112,12 +114,6 @@ const Header: React.FC<HeaderProps> = ({ toggleDrawer, openDrawer }) => {
     <Box
       sx={{
         height: '64px',
-        // direction: isRTL ? 'rtl' : 'ltr',
-        '@media (max-width: 500px)': {
-          position: 'fixed',
-          width: '100%',
-          zIndex: '999',
-        },
       }}
     >
       <Box
@@ -125,7 +121,9 @@ const Header: React.FC<HeaderProps> = ({ toggleDrawer, openDrawer }) => {
         sx={{
           display: 'flex',
           justifyContent: 'center',
-          position: hasSeenTutorial ? 'relative' : 'relative',
+          '@media (max-width: 500px)': {
+            position: hasSeenTutorial ? 'fixed' : 'relative',
+          },
           top: '0px',
           zIndex: '999',
           width: '100%',
@@ -174,8 +172,8 @@ const Header: React.FC<HeaderProps> = ({ toggleDrawer, openDrawer }) => {
             width={44}
             src={logoLight}
             alt="logo"
-            onClick={() => router.push('/dashboard')}
-            style={{ marginRight: isRTL ? '20px' : '0px' }}
+            onClick={() => isActiveYear && router.push('/dashboard')}
+            style={{ marginRight: isRTL ? '20px' : '0px', cursor: 'pointer' }}
           />
 
           <Box

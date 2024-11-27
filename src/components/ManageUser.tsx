@@ -10,7 +10,7 @@ import { cohortList, getCohortList } from '@/services/CohortServices';
 import { getMyUserList } from '@/services/MyClassDetailsService';
 import reassignLearnerStore from '@/store/reassignLearnerStore';
 import useStore from '@/store/store';
-import { QueryKeys, Role, Status } from '@/utils/app.constant';
+import { QueryKeys, Role, Status, Telemetry } from '@/utils/app.constant';
 import AddIcon from '@mui/icons-material/Add';
 import ApartmentIcon from '@mui/icons-material/Apartment';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
@@ -33,6 +33,7 @@ import SimpleModal from './SimpleModal';
 import { useQueryClient } from '@tanstack/react-query';
 import { toPascalCase } from '@/utils/Helper';
 import { useDirection } from '../hooks/useDirection';
+import { telemetryFactory } from '@/utils/telemetry';
 
 interface Cohort {
   cohortId: string;
@@ -72,6 +73,7 @@ const ManageUser: React.FC<ManageUsersProps> = ({
   const newStore = useStore();
   const queryClient = useQueryClient();
   const { dir, isRTL } = useDirection();
+  const isActiveYear = newStore.isActiveYearSelected;
 
   const [value, setValue] = React.useState(1);
   const [users, setUsers] = useState<
@@ -285,6 +287,21 @@ const ManageUser: React.FC<ManageUsersProps> = ({
 
         setOpenRemoveUserModal(true);
         setRemoveCohortNames(cohortNames);
+
+        const telemetryInteract = {
+          context: {
+            env: 'teaching-center',
+            cdata: [],
+          },
+          edata: {
+            id:'click-on-delete-user:'+userId,
+            type: Telemetry.CLICK,
+            subtype: '',
+            pageid: 'centers',
+          },
+        };
+        telemetryFactory.interact(telemetryInteract);
+
       } else {
         console.log(
           'User does not belong to any cohorts, proceed with deletion'
@@ -333,6 +350,19 @@ const ManageUser: React.FC<ManageUsersProps> = ({
 
       fetchCohortList();
       setReassignModalOpen(true);
+      const telemetryInteract = {
+        context: {
+          env: 'teaching-center',
+          cdata: [],
+        },
+        edata: {
+          id:'click-on-reassign-centers:'+userId,
+          type: Telemetry.CLICK,
+          subtype: '',
+          pageid: 'centers',
+        },
+      };
+      telemetryFactory.interact(telemetryInteract);
       setReloadState(true);
     }
     if (name === 'reassign-centers') {
@@ -418,7 +448,24 @@ const ManageUser: React.FC<ManageUsersProps> = ({
 
   const handleRequestBlockAction = () => {
     showToastMessage(t('BLOCKS.REASSIGN_BLOCK_REQUESTED'), 'success');
+
+
     setState({ ...state, bottom: false });
+
+
+    const telemetryInteract = {
+      context: {
+        env: 'teaching-center',
+        cdata: [],
+      },
+      edata: {
+        id:'reassign-block-request-success',
+        type: Telemetry.CLICK,
+        subtype: '',
+        pageid: 'centers',
+      },
+    };
+    telemetryFactory.interact(telemetryInteract);
   };
 
   const handleOpenAddFaciModal = () => {
@@ -460,7 +507,7 @@ const ManageUser: React.FC<ManageUsersProps> = ({
       <Box>
         {value === 1 && (
           <>
-            {!isFromFLProfile && (
+            {!isFromFLProfile && isActiveYear && (
               <Grid
                 px={'18px'}
                 spacing={2}
@@ -690,7 +737,7 @@ const ManageUser: React.FC<ManageUsersProps> = ({
                 isMobile={isMobile}
                 optionList={[
                   {
-                    label: t('COMMON.REASSIGN_BLOCKS'),
+                    label: t('COMMON.ADD_OR_REASSIGN_CENTERS'),
                     icon: (
                       <ApartmentIcon
                         sx={{ color: theme.palette.warning['300'] }}
@@ -698,15 +745,16 @@ const ManageUser: React.FC<ManageUsersProps> = ({
                     ),
                     name: 'reassign-block',
                   },
-                  {
-                    label: t('COMMON.REASSIGN_BLOCKS_REQUEST'),
-                    icon: (
-                      <LocationOnOutlinedIcon
-                        sx={{ color: theme.palette.warning['300'] }}
-                      />
-                    ),
-                    name: 'reassign-block-request',
-                  },
+                  // TODO: Integrate todo service
+                  // {
+                  //   label: t('COMMON.REASSIGN_BLOCKS_REQUEST'),
+                  //   icon: (
+                  //     <LocationOnOutlinedIcon
+                  //       sx={{ color: theme.palette.warning['300'] }}
+                  //     />
+                  //   ),
+                  //   name: 'reassign-block-request',
+                  // },
                   {
                     label: t('COMMON.DELETE_USER'),
                     icon: (
@@ -801,7 +849,7 @@ const ManageUser: React.FC<ManageUsersProps> = ({
             />
             <ReassignModal
               cohortNames={reassignCohortNames}
-              message={t('COMMON.REASSIGN_BLOCKS')}
+              message={t('COMMON.ADD_OR_REASSIGN_CENTERS')}
               handleAction={handleRequestBlockAction}
               handleCloseReassignModal={handleCloseReassignModal}
               modalOpen={reassignModalOpen}
@@ -830,7 +878,7 @@ const ManageUser: React.FC<ManageUsersProps> = ({
               <Box mt={1.5} mb={1.5}>
                 <Typography>
                   {t('CENTERS.THE_USER_BELONGS_TO_THE_FOLLOWING_COHORT')}{' '}
-                  <strong>{removeCohortNames}</strong>
+                  <strong>{toPascalCase(removeCohortNames)}</strong>
                   <br />
                   {t('CENTERS.PLEASE_REMOVE_THE_USER_FROM_COHORT')}
                 </Typography>

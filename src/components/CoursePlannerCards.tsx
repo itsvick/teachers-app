@@ -3,6 +3,8 @@ import { Box, Grid } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import { CoursePlannerCardsProps } from '@/utils/Interfaces';
 import { ResourcesType } from '@/utils/app.constant';
+import router from 'next/router';
+import placeholderImage from '../assets/images/decorationBg.png';
 
 const CoursePlannerCards: React.FC<CoursePlannerCardsProps> = ({
   resources,
@@ -28,19 +30,35 @@ const CoursePlannerCards: React.FC<CoursePlannerCardsProps> = ({
             resource: {
               link: string;
               name?: string;
+              appIcon?: string;
+              identifier?: string;
+              id?: string;
             },
             index: number
           ) => (
             <Grid item xs={6} md={4} lg={2} sx={{ mt: 2 }} key={index}>
               <Box
                 className="facilitator-bg"
-                onClick={() => window.open(resource?.link, '_blank')}
+                sx={{ backgroundImage: `url(${resource?.appIcon ? resource.appIcon : '/decorationBg.png'})`, position: 'relative', }}
+                onClick={() => router.push(`/play/content/${resource?.identifier || resource?.id}`)}
               >
+                <div
+                  style={{
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    backgroundColor: 'rgba(0, 0, 0, 0.5)', // Adjust opacity as needed
+                    zIndex: 1,
+                  }}
+                />
                 <Box
                   sx={{
                     fontSize: '16px',
                     fontWeight: '500',
                     color: theme?.palette?.warning['A400'],
+                    position: 'relative', zIndex: 2,
                   }}
                 >
                   {resource?.name || 'Untitled Resource'}
